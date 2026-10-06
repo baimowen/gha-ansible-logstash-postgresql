@@ -1,2 +1,103 @@
 ---
 # tasks file for roles/podman
+
+- name: Install podman
+  ansible.builtin.package:
+    name: "{{ podman_packages }}"
+    state: "{{ podman_package_state }}"
+
+- name: Ensure podman socket is enabled
+  ansible.builtin.service:
+    name: "{{ podman_socket_name }}"
+    enabled: "{{ podman_socket_enabled }}"
+    state: started
+  when: ansible_service_mgr | default('') == 'systemd'
+
+- name: Configure registry mirrors
+  ansible.builtin.template:
+    src: registries.conf.j2
+    dest: "{{ podman_registries_conf_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: podman_registry_mirrors | length > 0 or podman_insecure_registries | length > 0
+  notify: Restart podman socket
+
+- name: Create container network
+  containers.podman.podman_network:
+    name: "{{ podman_network_name }}"
+    driver: "{{ podman_network_driver }}"
+    state: present
+
+- name: Create volume for postgres data
+  containers.podman.podman_volume:
+    name: "{{ postgresql_volume_name }}"
+    state: present
+
+- name: Deploy postgresql container
+  containers.podman.podman_container:
+    name: "{{ postgresql_container_name }}"
+    image: "{{ postgresql_image }}"
+    state: started
+    restart_policy: "{{ postgresql_restart_policy }}"
+    network: "{{ podman_network_name }}"
+    volume:
+      - "{{ postgresql_volume_name }}:/var/lib/postgresql/data"
+    publish: "{{ postgresql_publish }}"
+    env:
+      POSTGRES_USER: "{{ postgresql_user }}"
+      POSTGRES_PASSWORD: "{{ postgresql_password }}"
+      POSTGRES_DB: "{{ postgresql_db }}"
+      TZ: "{{ postgresql_tz }}"
+
+- name: Wait for postgresql to accept connections
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - "{{ postgresql_container_name }}"
+      - pg_isready
+      - -U
+      - "{{ postgresql_user }}"
+      - -d
+      - "{{ postgresql_db }}"
+  register: postgresql_ready
+  changed_when: false
+  retries: "{{ postgresql_ready_retries }}"
+  delay: "{{ postgresql_ready_delay }}"
+  until: postgresql_ready.rc == 0
+
+- name: Ensure logstash pipeline directory exists
+  ansible.builtin.file:
+    path: "{{ logstash_pipeline_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy logstash pipeline configuration
+  ansible.builtin.template:
+    src: logstash.conf.j2
+    dest: "{{ logstash_pipeline_dir }}/logstash.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart logstash container
+
+- name: Deploy logstash container
+  containers.podman.podman_container:
+    name: "{{ logstash_container_name }}"
+    image: "{{ logstash_image }}"
+    state: started
+    restart_policy: "{{ logstash_restart_policy }}"
+    network: "{{ podman_network_name }}"
+    volume:
+      - "{{ logstash_pipeline_dir }}:/usr/share/logstash/pipeline:ro"
+    publish: "{{ logstash_publish }}"
+    env:
+      LS_JAVA_OPTS: "{{ logstash_java_opts }}"
+      POSTGRES_HOST: "{{ postgresql_container_name }}"
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: "{{ postgresql_user }}"
+      POSTGRES_PASSWORD: "{{ postgresql_password }}"
+      POSTGRES_DB: "{{ postgresql_db }}"

@@ -1,5 +1,4 @@
 .git/
-.secrets
 
 # Ansible 运行产物
 *.retry
@@ -17,6 +16,9 @@ dist/
 # direnv / 本地环境
 .direnv/
 .env.local
+.env
+.envrc
+.secrets
 
 # 编辑器交换文件
 .*.swp

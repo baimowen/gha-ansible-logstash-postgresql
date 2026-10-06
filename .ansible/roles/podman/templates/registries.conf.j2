@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+# 由 roles/podman 渲染：配置容器镜像加速与不安全注册表
+
+unqualified-search-registries = ["docker.io"]
+
+{% for mirror in podman_registry_mirrors %}
+[[registry]]
+location = "{{ mirror.name | default(mirror) }}"
+{% for m in mirror.mirrors | default([]) %}
+[[registry.mirror]]
+location = "{{ m.location }}"
+insecure = {{ m.insecure | default(false) | lower }}
+{% endfor %}
+{% endfor %}
+{% for insecure in podman_insecure_registries %}
+[[registry]]
+location = "{{ insecure }}"
+insecure = true
+{% endfor %}

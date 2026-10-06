@@ -1,8 +1,27 @@
 ---
+- name: manager user pass
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: create user
+      user:
+        name: ansible
+        groups: wheel
+        state: present
+        generate_ssh_key: true
+    - name: password-less access for operator
+      copy:
+        # src: ./templates/ansible
+        content: |
+          ansible ALL=(root) NOPASSWD: ALL
+        dest: /etc/sudoers.d/ansible
+
 - name: Deploy logging stack
   hosts: all
   become: true
   gather_facts: true
+  remote_user: ansible
   roles:
     - role: podman
     - role: postgresql

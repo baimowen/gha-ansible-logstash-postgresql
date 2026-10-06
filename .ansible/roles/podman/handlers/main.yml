@@ -1,2 +1,16 @@
 ---
 # handlers file for roles/podman
+
+- name: Restart podman socket
+  ansible.builtin.service:
+    name: "{{ podman_socket_name }}"
+    state: restarted
+  when: ansible_service_mgr | default('') == 'systemd'
+
+- name: Restart logstash container
+  ansible.builtin.command:
+    argv:
+      - podman
+      - restart
+      - "{{ logstash_container_name }}"
+  changed_when: true

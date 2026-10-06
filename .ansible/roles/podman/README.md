@@ -1,38 +1,58 @@
-Role Name
-=========
+# Role Name
 
-A brief description of the role goes here.
+安装并配置 podman，创建 `logging` 网络与 `pgdata` 卷，并通过
+`containers.podman.podman_container` 部署 `postgresql`、`logstash` 两个容器。
 
-Requirements
-------------
+## Requirements
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+- 目标主机使用 systemd（用于启用 `podman.socket`）
+- 控制端需要 `containers.podman` collection：
 
-Role Variables
---------------
+```bash
+ansible-galaxy collection install -r .ansible/requirements.yml
+```
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+## Role Variables
 
-Dependencies
-------------
+见 `defaults/main.yml`，常用变量：
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `podman_registry_mirrors` | `[]` | 镜像加速，见下方示例 |
+| `podman_insecure_registries` | `[]` | 不安全注册表（`insecure = true`） |
+| `podman_network_name` | `logging` | 容器网络名 |
+| `postgresql_image` | `docker.io/library/postgres:16-alpine` | PostgreSQL 镜像 |
+| `postgresql_publish` | `[]` | 映射到宿主机的端口，如 `["5432:5432"]` |
+| `logstash_image` | `docker.elastic.co/logstash/logstash:8.17.0` | Logstash 镜像 |
+| `logstash_pipeline_dir` | `/opt/logstash/pipeline` | pipeline 配置目录（只读挂载） |
 
-Example Playbook
-----------------
+镜像加速示例（`group_vars/all.yml`）：
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+```yaml
+podman_registry_mirrors:
+  - name: docker.io
+    mirrors:
+      - location: docker.m.daocloud.io
+      - location: registry.cn-hangzhou.aliyuncs.com
+```
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+## Dependencies
 
-License
--------
+无。
 
-BSD
+## Example Playbook
 
-Author Information
-------------------
+```yaml
+- hosts: all
+  become: true
+  roles:
+    - role: podman
+```
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+## License
+
+MIT
+
+## Author Information
+
+rocky

@@ -1,0 +1,10 @@
+---
+# ansible-lint 配置
+profile: basic
+
+exclude_paths:
+  - .venv/
+  - .ansible/collections/
+  - .ansible/roles/*/tests/
+
+offline: true
