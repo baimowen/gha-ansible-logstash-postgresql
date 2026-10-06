@@ -1,0 +1,21 @@
+[project]
+name = "gha-ansible-logstash-postgresql"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "rocky", email = "rocky@local.domain" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+gha-ansible-logstash-postgresql = "gha_ansible_logstash_postgresql:main"
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"

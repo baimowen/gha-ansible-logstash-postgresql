@@ -1,0 +1,5 @@
+---
+podman_registry_mirrors: []
+podman_http_proxy: ""
+podman_https_proxy: ""
+podman_no_proxy: "localhost,127.0.0.1"

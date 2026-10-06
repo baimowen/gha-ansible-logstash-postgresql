@@ -1,0 +1,22 @@
+.git/
+.secrets
+
+# Ansible 运行产物
+*.retry
+.ansible/collections/
+
+# Python / 工具链
+.venv/
+__pycache__/
+*.pyc
+
+# 发布产物
+*.tar.gz
+dist/
+
+# direnv / 本地环境
+.direnv/
+.env.local
+
+# 编辑器交换文件
+.*.swp

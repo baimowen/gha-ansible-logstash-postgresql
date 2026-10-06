@@ -1,0 +1,17 @@
+---
+- name: Deploy logging stack
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: podman
+    - role: postgresql
+    - role: logstash
+  tasks:
+    - name: Show system info
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop:
+        - "{{ ansible_hostname }}"
+        - "{{ ansible_distribution }}"
+        - "{{ ansible_distribution_version }}"
