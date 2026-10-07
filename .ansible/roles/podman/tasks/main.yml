@@ -101,6 +101,31 @@
       POSTGRES_USER: "{{ postgresql_user }}"
       POSTGRES_PASSWORD: "{{ postgresql_password }}"
       POSTGRES_DB: "{{ postgresql_db }}"
+      XPACK_MONITORING_ENABLED: "false"
+
+- name: disable xpack monitor
+  ansible.builtin.lineinfile:
+    path: /usr/share/logstash/logstash.yml
+    line: "xpack.monitoring.enabled: false"
+    insertafter: EOF
+    create: yes
+
+- name: Ensure filebeat config directory exists
+  ansible.builtin.file:
+    path: "{{ filebeat_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy filebeat configuration
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: "{{ filebeat_config_dir }}/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart filebeat container
 
 - name: Deploy filebeat container
   containers.podman.podman_container:
@@ -108,7 +133,11 @@
     image: "{{ filebeat_image }}"
     state: started
     restart_policy: "{{ filebeat_restart_policy }}"
-    network: "{{ filebeat_network_name }}"
-    volume:
-      - "{{ filebeat_config_volume }}"
-      - "{{ filebeat_logs_volume }}"
+    network: "{{ podman_network_name }}"
+    command: ["filebeat", "-e", "-c", "/usr/share/filebeat/filebeat.yml"]
+    # volume: 
+    #   - "{{ filebeat_config_dir }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+    #   - "{{ source_logs_dir }}/messages:/var/log/messages:ro"
+    mounts:
+      - "type=bind,source={{ filebeat_config_dir }}/filebeat.yml,target=/usr/share/filebeat/filebeat.yml,readonly=true"
+      - "type=bind,source={{ source_logs_dir }},target=/var/log,readonly=true"

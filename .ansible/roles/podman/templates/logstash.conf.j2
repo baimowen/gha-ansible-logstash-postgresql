@@ -1,12 +1,9 @@
 input {
-  tcp {
-    port => 5044
-    codec => json_lines
-  }
+  beats { port => 5044 }
 }
 
 filter {
-  # 在这里添加事件处理逻辑
+
 }
 
 output {
@@ -14,7 +11,6 @@ output {
     codec => rubydebug
   }
 
-  # 可选：写入 PostgreSQL（需安装对应 output 插件）
   # jdbc {
   #   driver => "org.postgresql.Driver"
   #   connection_string => "jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"

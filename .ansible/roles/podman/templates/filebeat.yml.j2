@@ -18,10 +18,14 @@ filebeat.inputs:
   #   period: 1h
 
 output.logstash:
-  hosts: ["{{ filebeat_output_host }}:{{ filebeat_output_port }}"]
+  # hosts: ["{{ logstash_container_name }}:{{ filebeat_output_port }}"]
+  hosts: ["{{ logstash_container_name }}:{{ logstash_publish[0].split(':')[1] }}"]
   # 如需启用 TLS，可在此处配置 ssl.enabled: true + cert/key 路径
 
 processors:
-  - add_host_name: true
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
   - add_fields:
-      env: production
+      target: ""
+      fields:
+        env: production

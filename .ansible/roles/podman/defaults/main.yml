@@ -20,24 +20,6 @@ podman_registries_conf_path: /etc/containers/registries.conf
 podman_network_name: logging
 podman_network_driver: bridge
 
-# --- filebeat 容器 ---
-filebeat_image: "docker.elastic.co/beats/filebeat:8.17.0"
-filebeat_container_name: "filebeat"
-filebeat_restart_policy: "unless-stopped"
-filebeat_network_name: "logging"
-filebeat_config_volume: "{{ playbook_dir }}/../roles/podman/files/filebeat/filebeat.yml:/etc/filebeat/filebeat.yml:ro"
-filebeat_logs_volume: "{{ playbook_dir }}/../../var/log:/var/log:ro"
-
-# --- logstash 容器 ---
-logstash_image: docker.elastic.co/logstash/logstash:8.17.0
-logstash_container_name: logstash
-logstash_restart_policy: unless-stopped
-logstash_java_opts: -Xms512m -Xmx512m
-logstash_pipeline_dir: /opt/logstash/pipeline
-logstash_publish:
-  - "5044:5044"
-  - "9600:9600"
-
 # --- postgresql 容器 ---
 postgresql_image: docker.io/library/postgres:16-alpine
 postgresql_container_name: postgresql
@@ -52,3 +34,20 @@ postgresql_healthcheck_interval: 10s
 postgresql_ready_retries: 15
 postgresql_ready_delay: 5
 
+# --- logstash 容器 ---
+logstash_image: "docker.elastic.co/logstash/logstash:8.17.0"
+logstash_container_name: "logstash"
+logstash_restart_policy: "unless-stopped"
+logstash_java_opts: -Xms512m -Xmx512m
+logstash_pipeline_dir: /usr/share/logstash/pipeline
+logstash_publish:
+  - "5044:5044"
+  - "9600:9600"
+
+# --- filebeat 容器 ---
+filebeat_image: "docker.elastic.co/beats/filebeat:8.17.0"
+filebeat_container_name: "filebeat"
+filebeat_restart_policy: "unless-stopped"
+filebeat_config_dir: /usr/share/filebeat
+filebeat_output_port: "{{ logstash_publish[0].split(':')[1] }}"
+source_logs_dir: "{{ playbook_dir }}/../../var/log"
