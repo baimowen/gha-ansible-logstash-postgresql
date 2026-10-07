@@ -101,3 +101,14 @@
       POSTGRES_USER: "{{ postgresql_user }}"
       POSTGRES_PASSWORD: "{{ postgresql_password }}"
       POSTGRES_DB: "{{ postgresql_db }}"
+
+- name: Deploy filebeat container
+  containers.podman.podman_container:
+    name: "{{ filebeat_container_name }}"
+    image: "{{ filebeat_image }}"
+    state: started
+    restart_policy: "{{ filebeat_restart_policy }}"
+    network: "{{ filebeat_network_name }}"
+    volume:
+      - "{{ filebeat_config_volume }}"
+      - "{{ filebeat_logs_volume }}"

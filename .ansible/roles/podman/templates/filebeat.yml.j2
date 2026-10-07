@@ -1,0 +1,27 @@
+# {{ ansible_managed }}
+# Filebeat configuration rendered by the podman role.
+# Outputs to Logstash container via TCP.
+
+filebeat.inputs:
+  # --- /var/log/messages (系统内核/服务日志) ---
+  - paths:
+      - "/var/log/messages"
+    towards_end: true
+
+  # --- Nginx 访问/错误日志 ---
+  - paths:
+      - "/var/log/nginx/access.log"
+      - "/var/log/nginx/error.log"
+
+  # --- 可选：通过 systemd journal 采集 ---
+  # - module: systemd
+  #   period: 1h
+
+output.logstash:
+  hosts: ["{{ filebeat_output_host }}:{{ filebeat_output_port }}"]
+  # 如需启用 TLS，可在此处配置 ssl.enabled: true + cert/key 路径
+
+processors:
+  - add_host_name: true
+  - add_fields:
+      env: production

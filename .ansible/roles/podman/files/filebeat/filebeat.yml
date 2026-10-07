@@ -1,0 +1,27 @@
+---
+filebeat.inputs:
+  # --- /var/log/messages (系统内核/服务日志) ---
+  - paths:
+      - "/var/log/messages"
+    towards_end: true
+
+  # --- Nginx 访问/错误日志 ---
+  - paths:
+      - "/var/log/nginx/access.log"
+      - "/var/log/nginx/error.log"
+
+  # --- 自定义 systemd 单元日志（journal） ---
+  # 如需通过 systemd journal 采集，可启用下面的 module
+  # - module: systemd
+  #   period: 1h
+  #   xpaths:
+  #     message: '$.message'
+
+output.logstash:
+  hosts: ["logstash:5044"]
+  # 如有启用 TLS，可在此处配置 ssl.enabled: true + cert/key 路径
+
+processors:
+  - add_host_name: true
+  - add_fields:
+      env: production

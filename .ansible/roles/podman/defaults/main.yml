@@ -9,7 +9,10 @@ podman_socket_enabled: true
 podman_socket_name: podman.socket
 
 # --- 镜像加速 / 注册表 ---
-podman_registry_mirrors: []
+podman_registry_mirrors:
+  - name: docker.io
+    mirrors:
+      - location: docker.m.daocloud.io
 podman_insecure_registries: []
 podman_registries_conf_path: /etc/containers/registries.conf
 
@@ -17,21 +20,15 @@ podman_registries_conf_path: /etc/containers/registries.conf
 podman_network_name: logging
 podman_network_driver: bridge
 
-# --- postgresql 容器（与 docker-compose.yaml 保持一致）---
-postgresql_image: docker.io/library/postgres:16-alpine
-postgresql_container_name: postgresql
-postgresql_restart_policy: unless-stopped
-postgresql_user: logstash
-postgresql_password: change-me
-postgresql_db: logs
-postgresql_tz: Asia/Shanghai
-postgresql_volume_name: pgdata
-postgresql_publish: [] # 例如 ["5432:5432"]，默认不暴露到宿主机
-postgresql_healthcheck_interval: 10s
-postgresql_ready_retries: 15
-postgresql_ready_delay: 5
+# --- filebeat 容器 ---
+filebeat_image: "docker.elastic.co/beats/filebeat:8.17.0"
+filebeat_container_name: "filebeat"
+filebeat_restart_policy: "unless-stopped"
+filebeat_network_name: "logging"
+filebeat_config_volume: "{{ playbook_dir }}/../roles/podman/files/filebeat/filebeat.yml:/etc/filebeat/filebeat.yml:ro"
+filebeat_logs_volume: "{{ playbook_dir }}/../../var/log:/var/log:ro"
 
-# --- logstash 容器（与 docker-compose.yaml 保持一致）---
+# --- logstash 容器 ---
 logstash_image: docker.elastic.co/logstash/logstash:8.17.0
 logstash_container_name: logstash
 logstash_restart_policy: unless-stopped
@@ -40,3 +37,18 @@ logstash_pipeline_dir: /opt/logstash/pipeline
 logstash_publish:
   - "5044:5044"
   - "9600:9600"
+
+# --- postgresql 容器 ---
+postgresql_image: docker.io/library/postgres:16-alpine
+postgresql_container_name: postgresql
+postgresql_restart_policy: unless-stopped
+postgresql_user: logstash
+postgresql_password: change-me
+postgresql_db: logs
+postgresql_tz: Asia/Shanghai
+postgresql_volume_name: pgdata
+postgresql_publish: []  # 例如 ["5432:5432"]，默认不暴露到宿主机
+postgresql_healthcheck_interval: 10s
+postgresql_ready_retries: 15
+postgresql_ready_delay: 5
+

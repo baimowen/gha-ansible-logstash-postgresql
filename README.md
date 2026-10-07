@@ -9,6 +9,7 @@
 .github/workflows/ci.yaml   # CI：yamllint / ansible-lint / shellcheck / actionlint / compose 校验
 docker-compose.yaml         # 等价的 compose 栈（本地开发与 CI 校验用）
 logstash/pipeline/          # compose 使用的 logstash pipeline 配置
+filebeat/filebeat.conf      # compose 使用的 filebeat 配置
 .ansible/
 ├── playbooks/site.yaml     # 部署入口
 ├── requirements.yml        # containers.podman collection
@@ -52,3 +53,4 @@ podman_registry_mirrors:
 
 角色变量（镜像、端口、凭据等）见 `.ansible/roles/podman/defaults/main.yml`，
 生产凭据请使用 ansible-vault 加密。
+

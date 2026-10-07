@@ -3,6 +3,7 @@
 # Ansible 运行产物
 *.retry
 .ansible/collections/
+var/
 
 # Python / 工具链
 .venv/

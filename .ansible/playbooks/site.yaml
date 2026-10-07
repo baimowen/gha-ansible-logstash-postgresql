@@ -3,6 +3,7 @@
   hosts: all
   become: true
   gather_facts: false
+  tags: [setup]
   tasks:
     - name: create user
       user:
@@ -16,12 +17,17 @@
         content: |
           ansible ALL=(root) NOPASSWD: ALL
         dest: /etc/sudoers.d/ansible
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
 
 - name: Deploy logging stack
   hosts: all
   become: true
   gather_facts: true
   remote_user: ansible
+  tags: [deploy]
   roles:
     - role: podman
     - role: postgresql
