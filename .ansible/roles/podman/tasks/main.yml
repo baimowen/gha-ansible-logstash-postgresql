@@ -1,6 +1,15 @@
 ---
 # tasks file for roles/podman
 
+- name: load secrets file
+  ansible.builtin.include_vars:
+    file: secrets/secrets.yaml
+    name: _loaded_secrets
+
+- name: import vault var
+  ansible.builtin.set_fact:
+    _vault_postgresql_password: "{{ _loaded_secrets.postgresql_password }}"
+
 - name: Install podman
   ansible.builtin.package:
     name: "{{ podman_packages }}"
@@ -135,7 +144,7 @@
     restart_policy: "{{ filebeat_restart_policy }}"
     network: "{{ podman_network_name }}"
     command: ["filebeat", "-e", "-c", "/usr/share/filebeat/filebeat.yml"]
-    # volume: 
+    # volume:
     #   - "{{ filebeat_config_dir }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
     #   - "{{ source_logs_dir }}/messages:/var/log/messages:ro"
     mounts:

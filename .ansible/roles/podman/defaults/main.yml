@@ -1,6 +1,15 @@
 ---
 # defaults file for roles/podman
 
+# - name: load secrets file
+#   ansible.builtin.include_vars:
+#     file: ../vars/secrets/secrets.yaml
+#     name: _load_secrets
+#
+# - name: import vault var
+#   ansible.builtin.set_fact:
+#     _vault_postgresql_password: "{{ _loaded_secrets.vault_postgresql_password }}"
+
 # --- podman 本体 ---
 podman_packages:
   - podman
@@ -25,7 +34,7 @@ postgresql_image: docker.io/library/postgres:16-alpine
 postgresql_container_name: postgresql
 postgresql_restart_policy: unless-stopped
 postgresql_user: logstash
-postgresql_password: change-me
+postgresql_password: "{{ _vault_postgresql_password }}"
 postgresql_db: logs
 postgresql_tz: Asia/Shanghai
 postgresql_volume_name: pgdata

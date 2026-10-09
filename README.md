@@ -22,6 +22,8 @@ scripts/generation_inventory.sh     # 根据局域网扫描生成主机清单
 
 ```bash
 source .venv/bin/activate
+mkdir -p src/gha_ansible_logstash_postgresql
+touch $_/__init__.py
 uv sync
 shellcheck scripts/*.sh
 uv run yamllint -c .yamllint .
