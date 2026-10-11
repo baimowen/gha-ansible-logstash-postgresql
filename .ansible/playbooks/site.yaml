@@ -1,9 +1,52 @@
 ---
-- name: manager user pass
+- name: deploy hashicorp vault
+  hosts: 127.0.0.1
+  remote_user: rocky
+  become: true
+  any_errors_fatal: true
+  gather_facts: true
+  tags: [deploy-vault]
+  roles:
+    - role: ansible-community.ansible-vault
+      vault_backend: file
+      vault_seal_type: shamir
+  tasks:
+    # - name: ensure vault service is started and enabled
+    #   ansible.builtin.systemd:
+    #     name: vault
+    #     state: started
+    #     enabled: true
+    # - name: wait for vault
+    #   ansible.builtin.wait_for:
+    #     port: 8200
+    #     host: 127.0.0.1
+    #     delay: 3
+    #     timeout: 30
+    - name: read postgresql password from vault
+      community.hashi_vault.vault_kv2_get:
+        url: "http://127.0.0.1:8200"
+        engine_mount_point: kv
+        path: postgresql
+        token: "{{ lookup('env', 'VAULT_TOKEN') }}"
+      register: pg_secret
+      no_log: true
+    - name: persist pg_secret to .secrets file
+      ansible.builtin.lineinfile:
+        path: "../../.secrets"
+        regexp: '^postgresql_password:'
+        line: "postgresql_password: {{ pg_secret.data.data._vault_postgresql_password }}"
+        create: true
+        owner: rocky
+        group: rocky
+        mode: "0600"
+      no_log: true
+
+- name: create user
   hosts: all
+  remote_user: rocky
   become: true
   gather_facts: false
-  tags: [setup]
+  tags: [create-user]
   tasks:
     - name: create user
       user:
@@ -24,19 +67,24 @@
 
 - name: Deploy logging stack
   hosts: all
-  become: true
-  gather_facts: true
   remote_user: ansible
+  become: true
+  gather_facts: false
   tags: [deploy]
+  vars_files:
+    - ../../.secrets
   roles:
     - role: podman
     - role: postgresql
     - role: logstash
-  tasks:
-    - name: Show system info
-      ansible.builtin.debug:
-        msg: "{{ item }}"
-      loop:
-        - "{{ ansible_hostname }}"
-        - "{{ ansible_distribution }}"
-        - "{{ ansible_distribution_version }}"
+  # tasks:
+  #   - name: show variables
+  #     ansible.builtin.debug:
+  #       msg: "{{ _vault_postgresql_password }}"
+  #   - name: Show system info
+  #     ansible.builtin.debug:
+  #       msg: "{{ item }}"
+  #     loop:
+  #       - "{{ ansible_hostname }}"
+  #       - "{{ ansible_distribution }}"
+  #       - "{{ ansible_distribution_version }}"

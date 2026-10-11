@@ -11,7 +11,6 @@ filebeat.inputs:
       - "/var/log/nginx/error.log"
 
   # --- 自定义 systemd 单元日志（journal） ---
-  # 如需通过 systemd journal 采集，可启用下面的 module
   # - module: systemd
   #   period: 1h
   #   xpaths:

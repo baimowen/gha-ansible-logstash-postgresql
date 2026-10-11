@@ -1,15 +1,6 @@
 ---
 # defaults file for roles/podman
 
-# - name: load secrets file
-#   ansible.builtin.include_vars:
-#     file: ../vars/secrets/secrets.yaml
-#     name: _load_secrets
-#
-# - name: import vault var
-#   ansible.builtin.set_fact:
-#     _vault_postgresql_password: "{{ _loaded_secrets.vault_postgresql_password }}"
-
 # --- podman 本体 ---
 podman_packages:
   - podman
@@ -24,6 +15,9 @@ podman_registry_mirrors:
       - location: docker.m.daocloud.io
 podman_insecure_registries: []
 podman_registries_conf_path: /etc/containers/registries.conf
+podman_http_proxy: ""
+podman_https_proxy: ""
+podman_no_proxy: "localhost,127.0.0.1"
 
 # --- 网络 ---
 podman_network_name: logging

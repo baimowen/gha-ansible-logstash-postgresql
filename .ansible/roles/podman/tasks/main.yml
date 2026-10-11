@@ -1,14 +1,13 @@
 ---
 # tasks file for roles/podman
 
-- name: load secrets file
-  ansible.builtin.include_vars:
-    file: secrets/secrets.yaml
-    name: _loaded_secrets
-
-- name: import vault var
-  ansible.builtin.set_fact:
-    _vault_postgresql_password: "{{ _loaded_secrets.postgresql_password }}"
+# - name: load secrets file
+#   ansible.builtin.include_vars:
+#     file: secrets/secrets.yaml
+#     name: _loaded_secrets
+# - name: import vault var
+#   ansible.builtin.set_fact:
+#     _vault_postgresql_password: "{{ _loaded_secrets.postgresql_password }}"
 
 - name: Install podman
   ansible.builtin.package:

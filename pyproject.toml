@@ -4,10 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "rocky", email = "rocky@local.domain" }
+    { name = "baimowen", email = "bmw20320443306@outlook.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "hvac>=2.4.0",
+]
 
 [project.scripts]
 gha-ansible-logstash-postgresql = "gha_ansible_logstash_postgresql:main"
@@ -20,7 +22,10 @@ dev = [
 ]
 
 [[tool.uv.index]]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+url = "https://mirrors.aliyun.com/pypi/simple"
+
+[[tool.uv.index]]
+url = "https://pypi.mirrors.ustc.edu.cn/simple"
 default = true
 
 [build-system]

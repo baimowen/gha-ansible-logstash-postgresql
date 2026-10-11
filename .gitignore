@@ -4,6 +4,9 @@
 *.retry
 .ansible/collections/
 
+# 下载的role
+.ansible/roles/ansible-community.ansible-vault/
+
 # Python / 工具链
 .venv/
 __pycache__/
@@ -15,10 +18,14 @@ dist/
 
 # direnv / 本地环境
 .direnv/
-.env.local
-.env
-.envrc
-.secrets
 
 # 编辑器交换文件
 .*.swp
+
+# 测试用日志文件
+2026-10-07.jsonl
+
+# 敏感数据
+secrets/
+.secrets
+.env

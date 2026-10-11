@@ -1,4 +1,12 @@
 ---
+roles:
+  - src: https://github.com/ansible-community/ansible-vault.git
+    name: ansible-community.ansible-vault
+    scm: git
+    version: master
+
 collections:
+  - name: community.hashi_vault
+    version: ">=7.1.0"
   - name: containers.podman
     version: ">=1.21.0"
