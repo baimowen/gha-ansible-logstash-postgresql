@@ -20,6 +20,7 @@ rules:
     indent-sequences: true
 
 ignore: |
+  .git/
   .venv/
   .ansible/collections/
-  .git/
+  .ansible/roles/ansible-community.ansible-vault/

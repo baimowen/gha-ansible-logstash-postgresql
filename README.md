@@ -23,7 +23,19 @@ scripts/*                           # 包含 lint 、build 、release 流程的�
 
 `dest_host` 主机需提前在本地hosts文件内配置dns解析，或直接修改为目标主机ip，并重命名主机变量 `.ansible/host_vars/dest_host`
 
-## 凭据和变量
+## 本地环境准备
+
+```shell
+uv sync
+direnv allow ./.envrc
+mkdir -p ./var/log
+ansible-galaxy role install -r .ansible/requirements.yml -r .ansilbe/roles/
+ansible-galaxy collection install -r .ansible/requirements.yml
+```
+
+后续若无特别声明，均默认以该环境为运行基准
+
+### 凭据和变量
 
 镜像加速配置在 `.ansible/roles/podman/default/main.yml:12`：
 
@@ -36,7 +48,7 @@ podman_registry_mirrors:
 
 角色变量（镜像、端口、凭据等）见 `.ansible/roles/<role_name>/defaults/main.yml`，
 
-敏感数据由 hashicorp vault 存储，ansible 和 compose两种方式部署均从该处获取值，
+敏感数据由 hashicorp vault 存储，ansible 和 compose 两种方式部署均从该处获取值，
 通过 put 命令存入数据库密码，根据需要自定义添加更多
 
 ```shell
@@ -45,10 +57,10 @@ vault secrets enable -path=kv kv-v2
 vault server -dev -dev-root-token-id $(cat .vault-token) -dev-listen-address="127.0.0.1:8200" &
 mkdir secrets
 cat <<EOF > secrets/vault_password.json
-{"postgresql_password":"password"}
+{"_vault_postgresql_password":"password"}
 EOF
 vault kv put -mount=kv postgresql @secrets/vault_data.json
-# 测试读取
+# test reading secrets from hashi vault
 uv run ansible localhost -bKm community.hashi_vault.vault_read \
   -a "url=http://127.0.0.1:8200 token=root path=kv/data/postgresql" \
   -c local | awk '
@@ -59,35 +71,31 @@ uv run ansible localhost -bKm community.hashi_vault.vault_read \
   | jq .data.data.data 
 ```
 
-## 本地 lint
+### lint
 
 ```bash
 shellcheck scripts/*.sh
-source .venv/bin/activate
-uv sync
-uv run yamllint -c .yamllint .
-uv run ansible-galaxy role install -r .ansible/requirements.yml -r .ansilbe/roles/
-uv run ansible-galaxy collection install -r .ansible/requirements.yml
-ANSIBLE_CONFIG=./.ansible/ansible.cfg uv run ansible-lint .
+yamllint -c .yamllint .
+ansible-lint .  # requires: collections and roles have been installed
 ```
 
 ## Ansible 方式
 
-### 包管理部署
+## 预处理
 
 ```bash
-mkdir -p ./var/log
-direnv allow ./.envrc
-ansible-galaxy role install -r .ansible/requirements.yml -r .ansilbe/roles/
-ansible-galaxy collection install -r .ansible/requirements.yml
-uv run ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy-vault -bK  # dest host is 127.0.0.1
+ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy-vault -bK  # dest host is 127.0.0.1
 ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags create-user -bK
-ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy
 ```
+
+### 包管理部署
+
+等待后续补齐
 
 ### 容器化部署
 
 ```bash
+ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy
 ```
 
 ## docker-compose 方式

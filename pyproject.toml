@@ -7,6 +7,7 @@ authors = [
     { name = "baimowen", email = "bmw20320443306@outlook.com" }
 ]
 requires-python = ">=3.11"
+# requires
 dependencies = [
     "hvac>=2.4.0",
 ]
@@ -14,8 +15,10 @@ dependencies = [
 [project.scripts]
 gha-ansible-logstash-postgresql = "gha_ansible_logstash_postgresql:main"
 
+# optional, won't be synced by default,
+# uv sync --groups lint
 [dependency-groups]
-dev = [
+lint = [
     "yamllint>=1.35.0",
     "ansible-core>=2.17.0",
     "ansible-lint>=24.7.0",

@@ -30,10 +30,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install lint tools
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync deps
+        run: uv sync --group lint
+
+      - name: Activate venv for later steps
         run: |
-          python -m pip install --upgrade pip
-          pip install yamllint ansible-core ansible-lint hvac
+          echo "$PWD/.venv/bin" >> $GITHUB_PATH
+          echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
 
       - name: Install Ansible collections and roles
         run: |
@@ -53,20 +59,18 @@ jobs:
         run: command -v shellcheck >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck; }
 
       - name: Lint shell scripts (shellcheck)
-        run: shellcheck scripts/*.sh
+        run: make lint-shell
 
       - name: Lint YAML (yamllint)
-        run: yamllint -c .yamllint .
+        run: make lint-yaml
 
       - name: Lint workflows (actionlint)
-        # wildcard expansion is not supported
-        # find .github/workflows \( -name '*.yaml' -o -name '*.yml' \) -type f -exec actionlint {} +
-        run: actionlint - < .github/workflows/ci.yaml
+        run: make lint-action
 
       - name: Lint Ansible (ansible-lint)
-        run: ansible-lint .
+        run: make lint-ansible
 
-      - name: Validate docker-compose.yaml
+      - name: Validate docker-compose
         env:
           POSTGRES_PASSWORD: ci-password
-        run: docker compose -f docker-compose.yaml config --quiet
+        run: make lint-compose
