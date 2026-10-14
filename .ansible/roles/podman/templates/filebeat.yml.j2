@@ -3,17 +3,13 @@
 # Outputs to Logstash container via TCP.
 
 filebeat.inputs:
-  # --- /var/log/messages (系统内核/服务日志) ---
   - paths:
       - "/var/log/messages"
-    towards_end: true
-
-  # --- Nginx 访问/错误日志 ---
   - paths:
       - "/var/log/nginx/access.log"
       - "/var/log/nginx/error.log"
 
-  # --- 可选：通过 systemd journal 采集 ---
+  # --- 通过 systemd journal 采集 ---
   # - module: systemd
   #   period: 1h
 

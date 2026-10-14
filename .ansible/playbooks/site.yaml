@@ -22,19 +22,19 @@
     #     host: 127.0.0.1
     #     delay: 3
     #     timeout: 30
-    - name: read postgresql password from vault
+    - name: read elastic password from vault
       community.hashi_vault.vault_kv2_get:
         url: "http://127.0.0.1:8200"
-        engine_mount_point: kv
-        path: postgresql
+        engine_mount_point: secret  # mountpoint
+        path: es  # api path: /secret/data/es, all key-vaule pair
         token: "{{ lookup('env', 'VAULT_TOKEN') }}"
-      register: pg_secret
+      register: es_secret
       no_log: true
-    - name: persist pg_secret to .secrets file
+    - name: persist es_pass to .secrets file
       ansible.builtin.lineinfile:
         path: "../../.secrets"
-        regexp: '^postgresql_password:'
-        line: "postgresql_password: {{ pg_secret.data.data._vault_postgresql_password }}"
+        regexp: '^_vault_elasticsearch_password:'
+        line: "_vault_elasticsearch_password: {{ es_secret.data.data.es_pass }}"  # /secret/data/es es_pass
         create: true
         owner: rocky
         group: rocky
@@ -80,7 +80,7 @@
   # tasks:
   #   - name: show variables
   #     ansible.builtin.debug:
-  #       msg: "{{ _vault_postgresql_password }}"
+  #       msg: "{{ _vault_elasticsearch_password }}"
   #   - name: Show system info
   #     ansible.builtin.debug:
   #       msg: "{{ item }}"

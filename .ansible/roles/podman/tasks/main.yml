@@ -37,43 +37,212 @@
     driver: "{{ podman_network_driver }}"
     state: present
 
-- name: Create volume for postgres data
+# - name: Create volume for postgres data
+#   containers.podman.podman_volume:
+#     name: "{{ postgresql_volume_name }}"
+#     state: present
+
+# - name: Deploy postgresql container
+#   containers.podman.podman_container:
+#     name: "{{ postgresql_container_name }}"
+#     image: "{{ postgresql_image }}"
+#     state: started
+#     restart_policy: "{{ postgresql_restart_policy }}"
+#     network: "{{ podman_network_name }}"
+#     volume:
+#       - "{{ postgresql_volume_name }}:/var/lib/postgresql/data"
+#     publish: "{{ postgresql_publish }}"
+#     env:
+#       POSTGRES_USER: "{{ postgresql_user }}"
+#       POSTGRES_PASSWORD: "{{ postgresql_password }}"
+#       POSTGRES_DB: "{{ postgresql_db }}"
+#       TZ: "{{ postgresql_tz }}"
+
+# - name: Wait for postgresql to accept connections
+#   ansible.builtin.command:
+#     argv:
+#       - podman
+#       - exec
+#       - "{{ postgresql_container_name }}"
+#       - pg_isready
+#       - -U
+#       - "{{ postgresql_user }}"
+#       - -d
+#       - "{{ postgresql_db }}"
+#   register: postgresql_ready
+#   changed_when: false
+#   retries: "{{ postgresql_ready_retries }}"
+#   delay: "{{ postgresql_ready_delay }}"
+#   until: postgresql_ready.rc == 0
+
+- name: Set vm.max_map_count for elasticsearch
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: "262144"
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Create volume for elasticsearch data
   containers.podman.podman_volume:
-    name: "{{ postgresql_volume_name }}"
+    name: "{{ elasticsearch_volume_name }}"
     state: present
 
-- name: Deploy postgresql container
-  containers.podman.podman_container:
-    name: "{{ postgresql_container_name }}"
-    image: "{{ postgresql_image }}"
-    state: started
-    restart_policy: "{{ postgresql_restart_policy }}"
-    network: "{{ podman_network_name }}"
-    volume:
-      - "{{ postgresql_volume_name }}:/var/lib/postgresql/data"
-    publish: "{{ postgresql_publish }}"
-    env:
-      POSTGRES_USER: "{{ postgresql_user }}"
-      POSTGRES_PASSWORD: "{{ postgresql_password }}"
-      POSTGRES_DB: "{{ postgresql_db }}"
-      TZ: "{{ postgresql_tz }}"
+- name: Ensure elasticsearch config directory exists
+  ansible.builtin.file:
+    path: "{{ elasticsearch_config_dir }}/config"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
-- name: Wait for postgresql to accept connections
+- name: Deploy elasticsearch configuration
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: "{{ elasticsearch_config_dir }}/config/elasticsearch.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy elasticsearch container
+  containers.podman.podman_container:
+    name: "{{ elasticsearch_container_name }}"
+    image: "{{ elasticsearch_image }}"
+    state: started
+    restart_policy: "{{ elasticsearch_restart_policy }}"
+    network: "{{ podman_network_name }}"
+    publish: "{{ elasticsearch_publish }}"
+    volume:
+      - "{{ elasticsearch_volume_name }}:/usr/share/elasticsearch/data"
+    mounts:
+      - "type=bind,source={{ elasticsearch_config_dir }}/config/elasticsearch.yml,target=/usr/share/elasticsearch/config/elasticsearch.yml,readonly=true"
+    env:
+      ELASTIC_PASSWORD: "{{ elasticsearch_password }}"  # the official image recognizes he environment variable as ELASTIC_PASSWORD
+      ES_JAVA_OPTS: "{{ elasticsearch_java_opts }}"
+
+- name: Wait for elasticsearch to accept connections
+  ansible.builtin.uri:
+    # a local uri task on the host can't be accessed by container name
+    # because the host isn't in the podman_network
+    # pre processing: the ES container needs to map ports to the host
+    url: "http://127.0.0.1:9200/_cluster/health"
+    url_username: elastic
+    url_password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    status_code: 200
+  no_log: true
+  failed_when: false  # failure will not interrupt
+  changed_when: false
+  register: elasticsearch_ready
+  retries: "{{ elasticsearch_ready_retries }}"
+  delay: "{{ elasticsearch_ready_delay }}"
+  #retries: 1
+  #delay: 1
+  until: elasticsearch_ready.status == 200
+# - name: install python3-pexpect
+#   ansible.builtin.package:
+#     name: python3-pexpect
+#     state: present
+# - name: Reset elastic password if authentication failed
+#   ansible.builtin.expect:
+#     command: podman exec -t {{ elasticsearch_container_name }} bin/elasticsearch-reset-password -u elastic -i
+#     responses:
+#       "would you like to continue \\[y/N\\]": "y\n"
+#       "Enter password for \\[elastic\\]:": "{{ elasticsearch_password }}\n"
+#       "Re-enter password for \\[elastic\\]:": "{{ elasticsearch_password }}\n"
+#     timeout: 60
+#   when: elasticsearch_ready.status != 200
+#   changed_when: true
+#   #no_log: true
+#   register: reset_result
+
+- name: Reset elastic password to a random value
+  ansible.builtin.command:
+    cmd: podman exec {{ elasticsearch_container_name }} bin/elasticsearch-reset-password -u elastic -b
+  register: reset_cmd
+  when: (elasticsearch_ready.status | default(0)) != 200
+  changed_when: true
+  no_log: true
+
+- name: Extract the newly generated password
+  ansible.builtin.set_fact:
+    generated_es_password: "{{ reset_cmd.stdout_lines | select('match', '^New value: ') | first | regex_replace('^New value: (.*)$', '\\1') }}"
+  when: reset_cmd is defined and reset_cmd.stdout_lines is defined
+  no_log: true
+
+- name: Set password to the expected value via API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:9200/_security/user/elastic/_password"
+    method: POST
+    url_username: elastic
+    url_password: "{{ generated_es_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ elasticsearch_password }}"
+    status_code: 200
+  when: generated_es_password is defined
+  no_log: true
+
+- name: Verify connection after potential reset
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:9200/_cluster/health"
+    url_username: elastic
+    url_password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    status_code: 200
+  register: final_check
+  no_log: true
+  retries: "{{ elasticsearch_ready_retries }}"
+  delay: "{{ elasticsearch_ready_delay }}"
+  until: final_check is succeeded
+
+- name: Set kibana_system password (same value as vault-managed elastic password)
   ansible.builtin.command:
     argv:
       - podman
       - exec
-      - "{{ postgresql_container_name }}"
-      - pg_isready
-      - -U
-      - "{{ postgresql_user }}"
-      - -d
-      - "{{ postgresql_db }}"
-  register: postgresql_ready
+      - "{{ elasticsearch_container_name }}"
+      - bash
+      - -c
+      - >-
+        curl -sf -X POST
+        -u elastic:$ELASTIC_PASSWORD
+        -H "Content-Type: application/json"
+        http://127.0.0.1:9200/_security/user/kibana_system/_password
+        -d "{\"password\":\"$ELASTIC_PASSWORD\"}"
+  register: kibana_system_password
   changed_when: false
-  retries: "{{ postgresql_ready_retries }}"
-  delay: "{{ postgresql_ready_delay }}"
-  until: postgresql_ready.rc == 0
+  failed_when: kibana_system_password.rc != 0
+
+- name: Ensure kibana config directory exists
+  ansible.builtin.file:
+    path: "{{ kibana_config_dir }}/config"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy kibana configuration
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "{{ kibana_config_dir }}/config/kibana.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy kibana container
+  containers.podman.podman_container:
+    name: "{{ kibana_container_name }}"
+    image: "{{ kibana_image }}"
+    state: started
+    restart_policy: "{{ kibana_restart_policy }}"
+    network: "{{ podman_network_name }}"
+    mounts:
+      - "type=bind,source={{ kibana_config_dir }}/config/kibana.yml,target=/usr/share/kibana/config/kibana.yml,readonly=true"
+    publish: "{{ kibana_publish }}"
+    env:
+      ELASTIC_PASSWORD: "{{ elasticsearch_password }}"
 
 - name: Ensure logstash pipeline directory exists
   ansible.builtin.file:
@@ -86,6 +255,7 @@
 - name: Deploy logstash pipeline configuration
   ansible.builtin.template:
     src: logstash.conf.j2
+    # target host file
     dest: "{{ logstash_pipeline_dir }}/logstash.conf"
     owner: root
     group: root
@@ -99,16 +269,18 @@
     state: started
     restart_policy: "{{ logstash_restart_policy }}"
     network: "{{ podman_network_name }}"
+    # file mounting between the target host and its container
     volume:
       - "{{ logstash_pipeline_dir }}:/usr/share/logstash/pipeline:ro"
     publish: "{{ logstash_publish }}"
     env:
       LS_JAVA_OPTS: "{{ logstash_java_opts }}"
-      POSTGRES_HOST: "{{ postgresql_container_name }}"
-      POSTGRES_PORT: "5432"
-      POSTGRES_USER: "{{ postgresql_user }}"
-      POSTGRES_PASSWORD: "{{ postgresql_password }}"
-      POSTGRES_DB: "{{ postgresql_db }}"
+      ELASTIC_PASSWORD: "{{ elasticsearch_password }}"
+      # POSTGRES_HOST: "{{ postgresql_container_name }}"
+      # POSTGRES_PORT: "5432"
+      # POSTGRES_USER: "{{ postgresql_user }}"
+      # POSTGRES_PASSWORD: "{{ postgresql_password }}"
+      # POSTGRES_DB: "{{ postgresql_db }}"
       XPACK_MONITORING_ENABLED: "false"
 
 - name: disable xpack monitor
@@ -129,6 +301,7 @@
 - name: Deploy filebeat configuration
   ansible.builtin.template:
     src: filebeat.yml.j2
+    # target host file
     dest: "{{ filebeat_config_dir }}/filebeat.yml"
     owner: root
     group: root
@@ -143,9 +316,7 @@
     restart_policy: "{{ filebeat_restart_policy }}"
     network: "{{ podman_network_name }}"
     command: ["filebeat", "-e", "-c", "/usr/share/filebeat/filebeat.yml"]
-    # volume:
-    #   - "{{ filebeat_config_dir }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-    #   - "{{ source_logs_dir }}/messages:/var/log/messages:ro"
+    # file mounting between the target host and its container
     mounts:
       - "type=bind,source={{ filebeat_config_dir }}/filebeat.yml,target=/usr/share/filebeat/filebeat.yml,readonly=true"
       - "type=bind,source={{ source_logs_dir }},target=/var/log,readonly=true"

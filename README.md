@@ -29,7 +29,7 @@ scripts/*                           # 包含 lint 、build 、release 流程的�
 uv sync
 direnv allow ./.envrc
 mkdir -p ./var/log
-ansible-galaxy role install -r .ansible/requirements.yml -r .ansilbe/roles/
+ansible-galaxy role install -r .ansible/requirements.yml -p .ansilbe/roles/
 ansible-galaxy collection install -r .ansible/requirements.yml
 ```
 
@@ -51,18 +51,24 @@ podman_registry_mirrors:
 敏感数据由 hashicorp vault 存储，ansible 和 compose 两种方式部署均从该处获取值，
 通过 put 命令存入数据库密码，根据需要自定义添加更多
 
+> 不要通过role变量或者组变量或者`-e`传递敏感数据，而应始终使用 .secrets 或 vault 存储你的密码
+
 ```shell
 echo 'your-vault-token' > .vault-token
-vault secrets enable -path=kv kv-v2
+# do not use `-dev` in production, or you'll lose it after restarting the service
 vault server -dev -dev-root-token-id $(cat .vault-token) -dev-listen-address="127.0.0.1:8200" &
 mkdir secrets
 cat <<EOF > secrets/vault_password.json
-{"_vault_postgresql_password":"password"}
+{"pg":{"_vault_postgresql_password":"password"},"es":{"_vault_elasticsearch_possword": "password"}}
 EOF
-vault kv put -mount=kv postgresql @secrets/vault_data.json
+vault secrets list
+vault kv list -mount=secret /
+vault kv put -mount=secret es \
+  es_pass=$(jq -r '.es._vault_elasticsearch_password' secrets/vault_data.json)
+vault kv get -mount=secret es
 # test reading secrets from hashi vault
 uv run ansible localhost -bKm community.hashi_vault.vault_read \
-  -a "url=http://127.0.0.1:8200 token=root path=kv/data/postgresql" \
+  -a "url=http://127.0.0.1:8200 token=your-vault-token path=secret/data/es" \
   -c local | awk '
     /BECOME password:/ { next }
     /=> *\{/           { print "{"; f=1; next }
@@ -77,6 +83,10 @@ uv run ansible localhost -bKm community.hashi_vault.vault_read \
 shellcheck scripts/*.sh
 yamllint -c .yamllint .
 ansible-lint .  # requires: collections and roles have been installed
+for f in .github/workflows/*.yml .github/workflows/*.yaml; do
+  [ -f "$f" ] || continue
+  actionlint - < "$f"
+done
 ```
 
 ## Ansible 方式

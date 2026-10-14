@@ -24,21 +24,49 @@ podman_network_name: logging
 podman_network_driver: bridge
 
 # --- postgresql 容器 ---
-postgresql_image: docker.io/library/postgres:16-alpine
-postgresql_container_name: postgresql
-postgresql_restart_policy: unless-stopped
-postgresql_user: logstash
-postgresql_password: "{{ _vault_postgresql_password }}"
-postgresql_db: logs
-postgresql_tz: Asia/Shanghai
-postgresql_volume_name: pgdata
-postgresql_publish: []  # 例如 ["5432:5432"]，默认不暴露到宿主机
-postgresql_healthcheck_interval: 10s
-postgresql_ready_retries: 15
-postgresql_ready_delay: 5
+#postgresql_image: docker.io/library/postgres:16-alpine
+#postgresql_container_name: postgresql
+#postgresql_restart_policy: unless-stopped
+#postgresql_user: logstash
+#postgresql_password: "{{ _vault_postgresql_password }}"
+#postgresql_db: logs
+#postgresql_tz: Asia/Shanghai
+#postgresql_volume_name: pgdata
+#postgresql_publish: []  # 例如 ["5432:5432"]，默认不暴露到宿主机
+#postgresql_healthcheck_interval: 10s
+#postgresql_ready_retries: 15
+#postgresql_ready_delay: 5
+
+# --- fluentbit 容器 ---
+#fluentbit_container_name: fluent-bit
+#fluentbit_http_port: 9880
+
+# --- elasticsearch 容器 ---
+elasticsearch_image: "docker.elastic.co/elasticsearch/elasticsearch:8.19.0"
+elasticsearch_container_name: "elasticsearch"
+elasticsearch_restart_policy: "unless-stopped"
+elasticsearch_user: elastic
+elasticsearch_password: "{{ _vault_elasticsearch_password }}"
+elasticsearch_java_opts: -Xms512m -Xmx512m
+elasticsearch_config_dir: /usr/share/elasticsearch
+elasticsearch_volume_name: esdata
+elasticsearch_publish:
+  - "9200:9200"
+elasticsearch_ready_retries: 30
+elasticsearch_ready_delay: 5
+
+# --- kibana 容器 ---
+kibana_image: "docker.elastic.co/kibana/kibana:8.19.0"
+kibana_container_name: "kibana"
+kibana_restart_policy: "unless-stopped"
+kibana_config_dir: /usr/share/kibana
+kibana_publish:
+  - "5601:5601"
+kibana_user: "kibana_system"
+#kibana_password: "{{ }}"
 
 # --- logstash 容器 ---
-logstash_image: "docker.elastic.co/logstash/logstash:8.17.0"
+logstash_image: "docker.elastic.co/logstash/logstash:8.19.0"
 logstash_container_name: "logstash"
 logstash_restart_policy: "unless-stopped"
 logstash_java_opts: -Xms512m -Xmx512m
@@ -46,9 +74,11 @@ logstash_pipeline_dir: /usr/share/logstash/pipeline
 logstash_publish:
   - "5044:5044"
   - "9600:9600"
+logstash_stdout_output: true
+logstash_es_index: "logs_%{+yyyy-MM-dd}"
 
 # --- filebeat 容器 ---
-filebeat_image: "docker.elastic.co/beats/filebeat:8.17.0"
+filebeat_image: "docker.elastic.co/beats/filebeat:8.19.0"
 filebeat_container_name: "filebeat"
 filebeat_restart_policy: "unless-stopped"
 filebeat_config_dir: /usr/share/filebeat

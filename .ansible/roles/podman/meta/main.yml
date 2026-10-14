@@ -1,25 +1,16 @@
 ---
 galaxy_info:
-  author: rocky
-  description: Install podman and deploy the logging stack (postgresql + logstash) containers.
+  author: baimowen
+  description: gha-ansible-logstash
   license: MIT
   min_ansible_version: "2.14"
   platforms:
     - name: EL
       versions:
-        - "8"
         - "9"
-    - name: Debian
-      versions:
-        - bookworm
-    - name: Ubuntu
-      versions:
-        - jammy
-        - noble
   galaxy_tags:
     - podman
     - containers
     - logstash
-    - postgresql
 
 dependencies: []

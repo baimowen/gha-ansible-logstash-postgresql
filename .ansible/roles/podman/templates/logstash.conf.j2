@@ -3,19 +3,20 @@ input {
 }
 
 filter {
-
 }
 
 output {
-  stdout {
-    codec => rubydebug
-  }
+  {% if logstash_stdout_output %}
+    stdout { codec => rubydebug }
+  {% endif %}
 
-  # jdbc {
-  #   driver => "org.postgresql.Driver"
-  #   connection_string => "jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-  #   username => "${POSTGRES_USER}"
-  #   password => "${POSTGRES_PASSWORD}"
-  #   statement => ["INSERT INTO events (payload) VALUES (?)", "message"]
-  # }
+  # output1
+  elasticsearch {
+    hosts => ["http://{{ elasticsearch_container_name }}:9200"]
+    index => "{{ logstash_es_index }}"
+    user => "{{ elasticsearch_user }}"
+    password => "${ELASTIC_PASSWORD}"
+    ssl_verification_mode => "none"
+    ilm_enabled => false
+  }
 }
