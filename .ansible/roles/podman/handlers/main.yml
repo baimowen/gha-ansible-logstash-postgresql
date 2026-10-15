@@ -7,12 +7,20 @@
     state: restarted
   when: ansible_service_mgr | default('') == 'systemd'
 
-- name: Restart logstash container
+- name: Restart elasticsearch container
   ansible.builtin.command:
     argv:
       - podman
       - restart
-      - "{{ logstash_container_name }}"
+      - "{{ elasticsearch_container_name }}"
+  changed_when: true
+
+- name: Restart kibana container
+  ansible.builtin.command:
+    argv:
+      - podman
+      - restart
+      - "{{ kibana_container_name }}"
   changed_when: true
 
 - name: Restart filebeat container
@@ -21,4 +29,12 @@
       - podman
       - restart
       - "{{ filebeat_container_name }}"
+  changed_when: true
+
+- name: Restart logstash container
+  ansible.builtin.command:
+    argv:
+      - podman
+      - restart
+      - "{{ logstash_container_name }}"
   changed_when: true

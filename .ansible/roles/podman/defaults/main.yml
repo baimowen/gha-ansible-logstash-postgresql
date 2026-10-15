@@ -63,7 +63,7 @@ kibana_config_dir: /usr/share/kibana
 kibana_publish:
   - "5601:5601"
 kibana_user: "kibana_system"
-#kibana_password: "{{ }}"
+kibana_system_password: "{{ _vault_elasticsearch_password }}"
 
 # --- logstash 容器 ---
 logstash_image: "docker.elastic.co/logstash/logstash:8.19.0"
@@ -83,4 +83,5 @@ filebeat_container_name: "filebeat"
 filebeat_restart_policy: "unless-stopped"
 filebeat_config_dir: /usr/share/filebeat
 filebeat_output_port: "{{ logstash_publish[0].split(':')[1] }}"
-source_logs_dir: "{{ playbook_dir }}/../../var/log"
+# source_logs_dir: "/var/log"
+source_logs_dir: "/tmp/logging"

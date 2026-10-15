@@ -103,6 +103,7 @@
     owner: root
     group: root
     mode: "0644"
+  notify: Restart elasticsearch container
 
 - name: Deploy elasticsearch container
   containers.podman.podman_container:
@@ -197,23 +198,35 @@
   delay: "{{ elasticsearch_ready_delay }}"
   until: final_check is succeeded
 
-- name: Set kibana_system password (same value as vault-managed elastic password)
-  ansible.builtin.command:
-    argv:
-      - podman
-      - exec
-      - "{{ elasticsearch_container_name }}"
-      - bash
-      - -c
-      - >-
-        curl -sf -X POST
-        -u elastic:$ELASTIC_PASSWORD
-        -H "Content-Type: application/json"
-        http://127.0.0.1:9200/_security/user/kibana_system/_password
-        -d "{\"password\":\"$ELASTIC_PASSWORD\"}"
-  register: kibana_system_password
-  changed_when: false
-  failed_when: kibana_system_password.rc != 0
+# - name: Set kibana_system password (same value as vault-managed elastic password)
+#   ansible.builtin.command:
+#     argv:
+#       - podman
+#       - exec
+#       - "{{ elasticsearch_container_name }}"
+#       - bash
+#       - -c
+#       - >-
+#         curl -sf -X POST
+#         -u elastic:$ELASTIC_PASSWORD
+#         -H "Content-Type: application/json"
+#         http://127.0.0.1:9200/_security/user/kibana_system/_password
+#         -d "{\"password\":\"$ELASTIC_PASSWORD\"}"
+#   register: kibana_system_password_reset
+#   changed_when: false
+#   failed_when: kibana_system_password_reset.rc != 0
+- name: Set kibana_system password (same vault as vault-managed elastic password)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:9200/_security/user/kibana_system/_password"
+    method: POST
+    url_username: elastic
+    url_password: "{{ elasticsearch_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ kibana_system_password }}"
+    status_code: 200
+  no_log: true
 
 - name: Ensure kibana config directory exists
   ansible.builtin.file:
@@ -230,6 +243,7 @@
     owner: root
     group: root
     mode: "0644"
+  notify: Restart kibana container
 
 - name: Deploy kibana container
   containers.podman.podman_container:
@@ -241,8 +255,8 @@
     mounts:
       - "type=bind,source={{ kibana_config_dir }}/config/kibana.yml,target=/usr/share/kibana/config/kibana.yml,readonly=true"
     publish: "{{ kibana_publish }}"
-    env:
-      ELASTIC_PASSWORD: "{{ elasticsearch_password }}"
+    # env:
+    #   ELASTIC_PASSWORD: "{{ elasticsearch_password }}"
 
 - name: Ensure logstash pipeline directory exists
   ansible.builtin.file:
@@ -307,6 +321,15 @@
     group: root
     mode: "0644"
   notify: Restart filebeat container
+
+- name: Ensure log file exists
+  ansible.builtin.file:
+    path: "{{ source_logs_dir }}"
+    state: directory
+    owner: ansible
+    group: ansible
+    mode: '0755'
+  #become: true
 
 - name: Deploy filebeat container
   containers.podman.podman_container:

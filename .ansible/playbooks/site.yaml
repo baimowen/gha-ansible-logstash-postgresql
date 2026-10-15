@@ -45,7 +45,7 @@
   hosts: all
   remote_user: rocky
   become: true
-  gather_facts: false
+  gather_facts: true
   tags: [create-user]
   tasks:
     - name: create user
@@ -54,6 +54,18 @@
         groups: wheel
         state: present
         generate_ssh_key: true
+    - name: authorize the public key for the ansible user
+      ansible.posix.authorized_key:
+        user: ansible
+        state: present
+        key: >-
+          {{
+            lookup('file', (
+              SSH_PUBKEY_PATH
+              | default(lookup('env', 'SSH_PUBKEY_PATH'), true)
+              | default('~/.ssh/id_rsa.pub', true)
+            ) | expanduser)
+          }}
     - name: password-less access for operator
       copy:
         # src: ./templates/ansible

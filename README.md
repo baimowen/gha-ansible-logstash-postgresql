@@ -29,6 +29,9 @@ scripts/*                           # 包含 lint 、build 、release 流程的�
 uv sync
 direnv allow ./.envrc
 mkdir -p ./var/log
+# this file will be sent to the target host at /tmp/logging/messages
+# and at the same time, it will be mounted to /var/log/messages in the container to avoid permission issues.
+echo "then: $(date -Isecond)" > ./var/log/messages
 ansible-galaxy role install -r .ansible/requirements.yml -p .ansilbe/roles/
 ansible-galaxy collection install -r .ansible/requirements.yml
 ```
