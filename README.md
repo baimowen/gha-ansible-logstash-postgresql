@@ -1,6 +1,6 @@
 # gha-ansible-logstash-postgresql
 
-通过 GitHub Actions 做 lint，通过 Ansible 部署 filebeat-logstash-postgresql 从采集、分析到入库流程。
+通过 GitHub Actions 做 lint，Hashicorp Vault 做密钥管理，通过 Ansible 部署 filebeat-logstash-postgresql 从采集、分析到入库流程。
 
 ## 目录结构
 
@@ -32,7 +32,7 @@ mkdir -p ./var/log
 # this file will be sent to the target host at /tmp/logging/messages
 # and at the same time, it will be mounted to /var/log/messages in the container to avoid permission issues.
 echo "then: $(date -Isecond)" > ./var/log/messages
-ansible-galaxy role install -r .ansible/requirements.yml -p .ansilbe/roles/
+ansible-galaxy role install -r .ansible/requirements.yml -p .ansible/roles/
 ansible-galaxy collection install -r .ansible/requirements.yml
 ```
 
@@ -103,18 +103,16 @@ ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags creat
 
 ### 包管理部署
 
-等待后续补齐
+```bash
+ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy-pkgs
+```
 
 ### 容器化部署
 
 ```bash
-ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy
+ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml --tags deploy-container
 ```
 
 ## docker-compose 方式
 
-```bash
-cp .env.example .env
-podman compose up -d  # docker 同样使用 compose 命令
-```
-
+等待后续补齐

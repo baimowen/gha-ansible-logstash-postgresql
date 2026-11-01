@@ -77,18 +77,16 @@
         mode: '0440'
         validate: 'visudo -cf %s'
 
-- name: Deploy logging stack
+- name: Deploy logging stack with container
   hosts: all
   remote_user: ansible
   become: true
   gather_facts: false
-  tags: [deploy]
+  tags: [deploy-container]
   vars_files:
     - ../../.secrets
   roles:
     - role: podman
-    - role: postgresql
-    - role: logstash
   # tasks:
   #   - name: show variables
   #     ansible.builtin.debug:
@@ -100,3 +98,28 @@
   #       - "{{ ansible_hostname }}"
   #       - "{{ ansible_distribution }}"
   #       - "{{ ansible_distribution_version }}"
+
+- name: Deploy loggin stack
+  hosts: all
+  remote_user: ansible
+  become: true
+  gather_facts: false
+  tags: [deploy-pkgs]
+  vars_files:
+    - ../../.secrets
+  # tasks:
+  #   - name: check value of elastic_stack_version
+  #     ansible.builtin.debug:
+  #       var: elastic_stack_version
+  #   - name: check elastic_repo_major_version
+  #     ansible.builtin.debug:
+  #       msg: "{{ elastic_stack_version.split('.')[0] }}"
+  roles:
+    - role: elastic_repo
+      tags: [elastic_repo]
+    - role: elasticsearch
+      tags: [elasticsearch]
+    - role: kibana
+      tags: [kibana]
+    - role: logstash
+      tags: [logstash]

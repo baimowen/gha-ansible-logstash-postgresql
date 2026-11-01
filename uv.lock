@@ -12,8 +12,7 @@ name = "ansible-compat"
 version = "26.9.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
 dependencies = [
-    { name = "ansible-core", version = "2.19.14", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "ansible-core", version = "2.21.5", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "ansible-core" },
     { name = "jsonschema" },
     { name = "packaging" },
     { name = "pyyaml" },
@@ -28,9 +27,6 @@ wheels = [
 name = "ansible-core"
 version = "2.19.14"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
-resolution-markers = [
-    "python_full_version < '3.12'",
-]
 dependencies = [
     { name = "cryptography" },
     { name = "jinja2" },
@@ -44,33 +40,12 @@ wheels = [
 ]
 
 [[package]]
-name = "ansible-core"
-version = "2.21.5"
-source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14'",
-    "python_full_version >= '3.12' and python_full_version < '3.14'",
-]
-dependencies = [
-    { name = "cryptography" },
-    { name = "jinja2" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "resolvelib" },
-]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/0b/27/d02c3f75e9f1468b5efbe49667574f68331b17e8a9f2bb99e1d18be70052/ansible_core-2.21.5.tar.gz", hash = "sha256:65bb3148c58ebb843cd5074004c805f404f152114d98476dd823324616c9c6cb" }
-wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/57/6f/7321059b2d1a5ea3c7e60807a5269942d93b2c11a2fc89ba8e4a3e827891/ansible_core-2.21.5-py3-none-any.whl", hash = "sha256:08886f9f3e23d129aa98a01271c4a47833516e1cb7c737a246788cb474f41222" },
-]
-
-[[package]]
 name = "ansible-lint"
 version = "26.9.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
 dependencies = [
     { name = "ansible-compat" },
-    { name = "ansible-core", version = "2.19.14", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "ansible-core", version = "2.21.5", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "ansible-core" },
     { name = "black" },
     { name = "cffi" },
     { name = "cryptography" },
@@ -505,9 +480,8 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-dev = [
-    { name = "ansible-core", version = "2.19.14", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "ansible-core", version = "2.21.5", source = { registry = "https://mirrors.aliyun.com/pypi/simple" }, marker = "python_full_version >= '3.12'" },
+lint = [
+    { name = "ansible-core" },
     { name = "ansible-lint" },
     { name = "yamllint" },
 ]
@@ -516,8 +490,8 @@ dev = [
 requires-dist = [{ name = "hvac", specifier = ">=2.4.0" }]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "ansible-core", specifier = ">=2.17.0" },
+lint = [
+    { name = "ansible-core", specifier = ">=2.17.0,<2.20" },
     { name = "ansible-lint", specifier = ">=24.7.0" },
     { name = "yamllint", specifier = ">=1.35.0" },
 ]

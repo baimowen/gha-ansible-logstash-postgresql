@@ -1,0 +1,22 @@
+---
+- name: Install Kibana package
+  ansible.builtin.dnf:
+    name: "{{ kibana_package }}"
+    state: present
+
+# - name: Gather installed package facts
+#   ansible.builtin.package_facts:
+#     manager: rpm
+#
+# - name: Assert exact Kibana version
+#   ansible.builtin.assert:
+#     that:
+#       - >-
+#         kibana_version in
+#         (ansible_facts.packages['kibana'] | default([])
+#          | map(attribute='version') | list)
+#     fail_msg: >-
+#       Expected Kibana {{ kibana_version }}, found
+#       {{ ansible_facts.packages['kibana'] | default([])
+#          | map(attribute='version') | join(', ')
+#          | default('not installed', true) }}.

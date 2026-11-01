@@ -1,0 +1,3 @@
+---
+kibana_version: "{{ elastic_stack_version }}"
+kibana_package: "kibana-{{ kibana_version }}"

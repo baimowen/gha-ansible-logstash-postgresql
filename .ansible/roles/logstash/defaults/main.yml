@@ -1,2 +1,3 @@
 ---
-# defaults file for roles/logstash
+logstash_version: "{{ elastic_stack_version }}"
+logstash_package: "logstash-{{ logstash_version }}"

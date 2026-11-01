@@ -1,0 +1,7 @@
+---
+elastic_repo_major_version: "{{ elastic_stack_version.split('.')[0] }}"
+elastic_repo_name: "elastic-{{ elastic_repo_major_version }}.x"
+elastic_repo_baseurl: "https://artifacts.elastic.co/packages/{{ elastic_repo_major_version }}.x/yum"
+elastic_repo_gpgkey: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+elastic_repo_gpgcheck: true
+elastic_repo_enabled: true

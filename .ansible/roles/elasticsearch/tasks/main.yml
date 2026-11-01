@@ -1,0 +1,22 @@
+---
+- name: Install Elasticsearch package
+  ansible.builtin.dnf:
+    name: "{{ elasticsearch_package }}"
+    state: present
+
+# - name: Gather installed package facts
+#   ansible.builtin.package_facts:
+#     manager: rpm
+#
+# - name: Assert exact Elasticsearch version
+#   ansible.builtin.assert:
+#     that:
+#       - >-
+#         elasticsearch_version in
+#         (ansible_facts.packages['elasticsearch'] | default([])
+#          | map(attribute='version') | list)
+#     fail_msg: >-
+#       Expected Elasticsearch {{ elasticsearch_version }}, found
+#       {{ ansible_facts.packages['elasticsearch'] | default([])
+#          | map(attribute='version') | join(', ')
+#          | default('not installed', true) }}.

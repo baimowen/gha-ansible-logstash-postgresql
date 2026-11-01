@@ -41,8 +41,12 @@ podman_network_driver: bridge
 #fluentbit_container_name: fluent-bit
 #fluentbit_http_port: 9880
 
+# --- elastic stack ---
+elastic_stack_version: "9.5.5"
+# elastic_stack_version8: "8.19.0"
+
 # --- elasticsearch 容器 ---
-elasticsearch_image: "docker.elastic.co/elasticsearch/elasticsearch:8.19.0"
+elasticsearch_image: "docker.elastic.co/elasticsearch/elasticsearch:{{ elastic_stack_version }}"
 elasticsearch_container_name: "elasticsearch"
 elasticsearch_restart_policy: "unless-stopped"
 elasticsearch_user: elastic
@@ -56,7 +60,7 @@ elasticsearch_ready_retries: 30
 elasticsearch_ready_delay: 5
 
 # --- kibana 容器 ---
-kibana_image: "docker.elastic.co/kibana/kibana:8.19.0"
+kibana_image: "docker.elastic.co/kibana/kibana:{{ elastic_stack_version }}"
 kibana_container_name: "kibana"
 kibana_restart_policy: "unless-stopped"
 kibana_config_dir: /usr/share/kibana
@@ -66,7 +70,7 @@ kibana_user: "kibana_system"
 kibana_system_password: "{{ _vault_elasticsearch_password }}"
 
 # --- logstash 容器 ---
-logstash_image: "docker.elastic.co/logstash/logstash:8.19.0"
+logstash_image: "docker.elastic.co/logstash/logstash:{{ elastic_stack_version }}"
 logstash_container_name: "logstash"
 logstash_restart_policy: "unless-stopped"
 logstash_java_opts: -Xms512m -Xmx512m
@@ -78,7 +82,7 @@ logstash_stdout_output: true
 logstash_es_index: "logs_%{+yyyy-MM-dd}"
 
 # --- filebeat 容器 ---
-filebeat_image: "docker.elastic.co/beats/filebeat:8.19.0"
+filebeat_image: "docker.elastic.co/beats/filebeat:{{ elastic_stack_version }}"
 filebeat_container_name: "filebeat"
 filebeat_restart_policy: "unless-stopped"
 filebeat_config_dir: /usr/share/filebeat

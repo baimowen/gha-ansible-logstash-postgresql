@@ -1,0 +1,27 @@
+---
+# - name: Assert supported platform
+#   ansible.builtin.assert:
+#     that:
+#       - ansible_facts['os_family'] == 'RedHat'
+#       - ansible_facts['distribution'] in ['RedHat', 'Rocky']
+#       - ansible_facts['distribution_major_version'] | int == 9
+#     fail_msg: >-
+#       This stack only supports RHEL 9 / Rocky Linux 9.
+#       Detected {{ ansible_facts['distribution'] }}
+#       {{ ansible_facts['distribution_version'] }}.
+#     quiet: true
+
+- name: Import Elastic GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ elastic_repo_gpgkey }}"
+    state: present
+
+- name: Configure Elastic repository
+  ansible.builtin.yum_repository:
+    name: "{{ elastic_repo_name }}"
+    description: "Elastic {{ elastic_repo_major_version }}.x packages"
+    baseurl: "{{ elastic_repo_baseurl }}"
+    gpgcheck: "{{ elastic_repo_gpgcheck | bool }}"
+    gpgkey: "{{ elastic_repo_gpgkey }}"
+    enabled: "{{ elastic_repo_enabled | bool }}"
+    state: present

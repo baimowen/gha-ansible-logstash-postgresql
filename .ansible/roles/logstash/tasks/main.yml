@@ -1,2 +1,22 @@
 ---
-# tasks file for roles/logstash
+- name: Install Logstash package
+  ansible.builtin.dnf:
+    name: "{{ logstash_package }}"
+    state: present
+
+# - name: Gather installed package facts
+#   ansible.builtin.package_facts:
+#     manager: rpm
+#
+# - name: Assert exact Logstash version
+#   ansible.builtin.assert:
+#     that:
+#       - >-
+#         logstash_version in
+#         (ansible_facts.packages['logstash'] | default([])
+#          | map(attribute='version') | list)
+#     fail_msg: >-
+#       Expected Logstash {{ logstash_version }}, found
+#       {{ ansible_facts.packages['logstash'] | default([])
+#          | map(attribute='version') | join(', ')
+#          | default('not installed', true) }}.
