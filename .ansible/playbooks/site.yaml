@@ -43,10 +43,12 @@
 
 - name: create user
   hosts: all
-  remote_user: rocky
+  # remote_user: rocky
   become: true
   gather_facts: true
   tags: [create-user]
+  vars:
+    ansible_user: rocky
   tasks:
     - name: create user
       user:

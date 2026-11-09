@@ -154,8 +154,8 @@ uv run ansible localhost -bKm community.hashi_vault.vault_read \
     /=> *\{/           { print "{"; f=1; next }
     f && /^\}/         { print "}"; exit }
     f                  { print }' \
-  | jq .data.data.data
-# output: _vault_elasticsearch_password: password
+  | jq -c .data.data.data
+# output: {"es_pass": "password"}
 ```
 
 >  不要通过 role 变量或者组变量或者 `-e` 传递敏感数据，而应始终使用 `.secrets` 或 vault 存储你的密码
@@ -201,15 +201,17 @@ CI 工作流 `.github/workflows/ci.yaml` 在 push、pull request 和手动触发
 
 ```shell
 # 1. 本地安装 Vault 并准备 .secrets
-ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
+# 若使用 nix + devenv 则需要手动准备 .secrets
+# 格式为 _vault_elasticsearch_password: your-vault-token
+uv run ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
   --tags deploy-vault -bK
 
 # 2. 在目标主机创建部署用户
-ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
-  --tags create-user -bK
+uv run ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
+  --tags create-user -bK -e ansible_user=$(id -un)
 
 # 3. 容器化部署或通过包管理部署
-ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
+uv run ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
   --tags deploy-container
 ansible-playbook -i .ansible/inventory .ansible/playbooks/site.yaml \
   --tags deploy-pkgs

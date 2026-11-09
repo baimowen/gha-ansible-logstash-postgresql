@@ -1,4 +1,3 @@
----
 name: gha-ansible-logstash-postgresql
 
 services:
@@ -21,4 +20,3 @@ volumes:
 networks:
   logging:
     driver: bridge
----
