@@ -4,6 +4,7 @@ profile: basic
 
 exclude_paths:
   - .venv/
+  - devenv.yaml
   - .ansible/collections/
   - .ansible/roles/*/tests/
 
