@@ -1,1 +1,24 @@
 ---
+name: gha-ansible-logstash-postgresql
+
+services:
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${LOGSTASH_VERSION:-9.5.5}
+    restart: unless-stopped
+    environment:
+      LS_JAVA_OPTS: ${LS_JAVA_OPTS:--Xms512m -Xmx512m}
+    volumes:
+      - ./compose/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks:
+      - logging
+    ports:
+      - "${LOGSTASH_BEATS_PORT:-5044}:5044"
+      - "${LOGSTASH_API_PORT:-9600}:9600"
+
+volumes:
+  pgdata:
+
+networks:
+  logging:
+    driver: bridge
+---

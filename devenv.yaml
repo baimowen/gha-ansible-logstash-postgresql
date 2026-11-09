@@ -1,0 +1,4 @@
+nixpkgs:
+  allow_unfree: true
+  permitted_unfree_packages:
+    - vault-bin

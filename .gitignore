@@ -18,6 +18,7 @@ dist/
 
 # direnv / 本地环境
 .direnv/
+.devenv/
 
 # 编辑器交换文件
 .*.swp
