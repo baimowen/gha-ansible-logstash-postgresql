@@ -5,6 +5,7 @@ profile: basic
 exclude_paths:
   - .venv/
   - devenv.yaml
+  - docker-compose.yaml
   - .ansible/collections/
   - .ansible/roles/*/tests/
 
