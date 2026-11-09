@@ -3,6 +3,7 @@
 {
   languages.python = {
     enable = true;
+    venv.enable = true;
     # nixpkgs-python's 3.11 alias currently resolves to 3.11.18,
     # which is not present in the cachix cache and fails to build (the mimetypes patch no longer applies).
     # Pin to 3.11.17, which is available prebuilt in the cache.
